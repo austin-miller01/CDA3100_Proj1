@@ -23,6 +23,8 @@ typedef struct stateStruct {
 void printState(stateType *);
 std::string checkOpCode(std::string);
 int checkReg(std::string);
+//convert 2's complement to decimal
+int twosComplement(std::string);
 
 //convert decimal to binary
 std::string decToBin(int dec) {
@@ -73,15 +75,51 @@ main(int argc, char *argv[])
 	for(int i = 0; i < state.numMemory; i++){
 		binary_nums.push_back(decToBin(state.mem[i]));
 	}
-	int reg1 = 0, reg2 = 0, rdest = 0;
+	for(int i = 0; i < NUMREGS; i++){
+		state.reg[i] = 0;
+	}
+	int reg1 = 0, reg2 = 0, rdest = 0, offset = 0;
+	std::string currOpCode = "";
 	for(int i = 0; i < binary_nums.size(); i++){
-		state.pc++;
+		currOpCode = checkOpCode(binary_nums[i]);
+		label:
+		std::cout << "Current Opcode: " << currOpCode << std::endl;
 		printState(&state);
-		//std::cout << "pc = " << state.pc << "\t";
-		reg1 = checkReg(binary_nums[i].substr(31-21,3));
-		reg2 = checkReg(binary_nums[i].substr(31-18,3));
-		rdest = checkReg(binary_nums[i].substr(31-2,3));
-		//std::cout << checkOpCode(binary_nums[i]) <<" "<< reg1 << " " << reg2 <<" " << rdest <<   std::endl;
+		if(currOpCode == "NOOP")continue;
+		else if(currOpCode == "ADD" || currOpCode == "NAND" ){
+			reg1 = checkReg(binary_nums[i].substr(31-21,3));
+			reg2 = checkReg(binary_nums[i].substr(31-18,3));
+			rdest = checkReg(binary_nums[i].substr(31-2,3));
+			if(currOpCode == "ADD"){
+				state.reg[rdest] = state.reg[reg1] + state.reg[reg2];
+			}
+			else if(currOpCode == "NAND"){
+				state.reg[rdest] = ~(state.reg[reg1] & state.reg[reg2]);
+			}
+		}
+		else if(currOpCode == "LW" || currOpCode == "SW" || currOpCode == "BEQ"){
+			offset = checkReg(binary_nums[i].substr(31-15,16));
+			reg1 = checkReg(binary_nums[i].substr(31-21,3));
+			reg2 = checkReg(binary_nums[i].substr(31-18,3));
+			if(currOpCode == "BEQ"){
+				if(state.reg[reg1] == state.reg[reg2]){
+					currOpCode = checkOpCode(decToBin(state.mem[state.pc + 1 + offset]));
+					goto label;
+				}
+			}
+			else if(currOpCode == "SW"){
+				state.mem[state.reg[reg1] + offset] = state.reg[reg2];
+			}
+			else if(currOpCode == "LW"){
+				
+				state.reg[reg2] = state.mem[state.reg[reg1] + offset];
+			}
+			
+		}
+		else if(currOpCode == "HALT")break;
+		
+		
+		state.pc++;
 
 	}
 	
@@ -114,7 +152,7 @@ std::string checkOpCode(std::string binary){
 	else if(opcode == "011")return "SW";
 	else if(opcode == "100")return "BEQ";
 	else if(opcode == "110")return "HALT";
-	else if(opcode == "111")return "INVALID";
+	else if(opcode == "111")return "NOOP";
 	return "INVALID";
 
 }
@@ -124,6 +162,17 @@ int checkReg(std::string input){
 	int dec = 0;
 	for(int i = 0; i < input.length(); i++){
 		dec += (input[i] - '0') * pow(2, input.length() - i - 1);
+	}
+	return dec;
+}
+
+int twosComplement(std::string input){
+	int dec = 0;
+	for(int i = 0; i < input.length(); i++){
+		dec += (input[i] - '0') * pow(2, input.length() - i - 1);
+	}
+	if(dec > 32767){
+		dec = dec - 65536;
 	}
 	return dec;
 }
