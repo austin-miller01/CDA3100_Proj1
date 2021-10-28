@@ -1,106 +1,129 @@
+/* instruction-level simulator for LC3100 */
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <math.h>
 #include <iostream>
-#include <fstream>
 #include <string>
-#include <bitset>
 #include <vector>
 
+#define NUMMEMORY 65536 /* maximum number of words in memory */
 
-//convert hex to binary
-std::string hexToBinary(std::string hex)
-{
-	std::string binary;
-	for (int i = 0; i < hex.length(); i++)
-	{
-		switch (hex[i])
-		{
-		case '0':
-			binary += "0000";
-			break;
-		case '1':
-			binary += "0001";
-			break;
-		case '2':
-			binary += "0010";
-			break;
-		case '3':
-			binary += "0011";
-			break;
-		case '4':
-			binary += "0100";
-			break;
-		case '5':
-			binary += "0101";
-			break;
-		case '6':
-			binary += "0110";
-			break;
-		case '7':
-			binary += "0111";
-			break;
-		case '8':
-			binary += "1000";
-			break;
-		case '9':
-			binary += "1001";
-			break;
-		case 'A':
-			binary += "1010";
-			break;
-		case 'B':
-			binary += "1011";
-			break;
-		case 'C':
-			binary += "1100";
-			break;
-		case 'D':
-			binary += "1101";
-			break;
-		case 'E':
-			binary += "1110";
-			break;
-		case 'F':
-			binary += "1111";
-			break;
-		}
-	}
+#define NUMREGS 8 /* number of machine registers */
 
-	if(binary.length() != 32){
-		while(binary.length() != 32){
-			binary = "0" + binary;
-		}
+#define MAXLINELENGTH 1000
+
+typedef struct stateStruct {
+	int pc;
+	int mem[NUMMEMORY];
+	int reg[NUMREGS];
+	int numMemory;
+} stateType;
+
+void printState(stateType *);
+std::string checkOpCode(std::string);
+int checkReg(std::string);
+
+//convert decimal to binary
+std::string decToBin(int dec) {
+	std::string bin = "";
+	while (dec > 0) {
+		bin = (dec % 2 == 0 ? "0" : "1") + bin;
+		dec /= 2;
 	}
-	return binary;
+	if(bin.length() < 32){
+		while(bin.length() < 32){
+			bin = "0" + bin;
+		}
+
+	}
+	return bin;
 }
 
-int main(int argc, char * argv[]){
-	
-	std::ifstream myfile;
-	myfile.open(argv[1]);
-	std::vector<std::string> lines;
-	
-	std::string inLine;
-	std::string binary = "";
+int
+main(int argc, char *argv[])
+{
+	std::vector<std::string> binary_nums;
 
-	while(myfile.is_open()){
 
-		while(std::getline(myfile,inLine)){
-			binary = hexToBinary(inLine);
-			lines.push_back(binary);
-		}
-		
-		myfile.close();
+	char line[MAXLINELENGTH];
+	stateType state;
+	FILE *filePtr;
+	if (argc != 2) {
+		printf("error: usage: %s <machine-code file>\n", argv[0]);
+		exit(1);
 	}
-
-	for(int i = 0; i < lines.size(); i++){
-		for(int j = 0;j < lines[i].length(); j++){
-			if(j%4 == 0 && j != 0){
-				std::cout << " ";
-			}
-			std::cout << lines[i][j];
+	filePtr = fopen(argv[1], "r");
+	if (filePtr == NULL) {
+		printf("error: can't open file %s", argv[1]);
+		perror("fopen");
+		exit(1);
+	}
+/* read in the entire machine-code file into memory */
+	for (state.numMemory = 0; fgets(line, MAXLINELENGTH, filePtr) != NULL;
+	state.numMemory++) {
+		if (sscanf(line, "%d", state.mem+state.numMemory) != 1) {
+    			printf("error in reading address %d\n", state.numMemory);
+    			exit(1);
 		}
-		std::cout << std::endl;
+		printf("memory[%d]=%d\n", state.numMemory, 
+		state.mem[state.numMemory]);
+	}
+	//Below this line is all the stuff about opcodes and registers, adding the lines to a vector
+	for(int i = 0; i < state.numMemory; i++){
+		binary_nums.push_back(decToBin(state.mem[i]));
+	}
+	int reg1 = 0, reg2 = 0, rdest = 0;
+	for(int i = 0; i < binary_nums.size(); i++){
+		state.pc++;
+		printState(&state);
+		//std::cout << "pc = " << state.pc << "\t";
+		reg1 = checkReg(binary_nums[i].substr(31-21,3));
+		reg2 = checkReg(binary_nums[i].substr(31-18,3));
+		rdest = checkReg(binary_nums[i].substr(31-2,3));
+		//std::cout << checkOpCode(binary_nums[i]) <<" "<< reg1 << " " << reg2 <<" " << rdest <<   std::endl;
+
 	}
 	
-	return 0;
+	return(0);
+}
+void
+printState(stateType *statePtr)
+{
+	int i;
 
+	printf("\n@@@\nstate:\n");
+	printf("\tpc %d\n", statePtr->pc);
+	printf("\tmemory:\n");
+
+	for (i=0; i<statePtr->numMemory; i++) {
+    		printf("\t\tmem[ %d ] %d\n", i, statePtr->mem[i]);
+	}
+	printf("\tregisters:\n");
+	for (i=0; i<NUMREGS; i++) {
+    	printf("\t\treg[ %d ] %d\n", i, statePtr->reg[i]);
+	}
+	printf("end state\n");
+}
+
+std::string checkOpCode(std::string binary){
+	std::string opcode = binary.substr(31-24,3);
+	if (opcode == "000")return "ADD";
+	else if(opcode == "001")return "NAND";
+	else if(opcode == "010")return "LW";
+	else if(opcode == "011")return "SW";
+	else if(opcode == "100")return "BEQ";
+	else if(opcode == "110")return "HALT";
+	else if(opcode == "111")return "INVALID";
+	return "INVALID";
+
+}
+
+int checkReg(std::string input){
+	//convert binary to decimal
+	int dec = 0;
+	for(int i = 0; i < input.length(); i++){
+		dec += (input[i] - '0') * pow(2, input.length() - i - 1);
+	}
+	return dec;
 }

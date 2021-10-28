@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 
 #define NUMMEMORY 65536 /* maximum number of words in memory */
 
@@ -17,6 +18,8 @@ typedef struct stateStruct {
 } stateType;
 
 void printState(stateType *);
+//convert decimal to binary
+int decToBin(int);
 
 int
 main(int argc, char *argv[])
@@ -44,6 +47,11 @@ main(int argc, char *argv[])
 		printf("memory[%d]=%d\n", state.numMemory, 
 		state.mem[state.numMemory]);
 	}
+	int i;
+	int out = 0;
+	for(i = 0; i < state.numMemory; i++){
+		printf("%d\n", decToBin(state.mem[i]));
+	}
 	return(0);
 }
 void
@@ -63,4 +71,17 @@ printState(stateType *statePtr)
     	printf("\t\treg[ %d ] %d\n", i, statePtr->reg[i]);
 	}
 	printf("end state\n");
+}
+//convert decimal to binary
+int decToBin(int dec)
+{
+	int bin = 0;
+	int i = 0;
+	while(dec != 0)
+	{
+		bin = bin + (dec % 2) * pow(10, i);
+		dec = dec / 2;
+		i++;
+	}
+	return bin;
 }
