@@ -74,16 +74,18 @@ main(int argc, char *argv[])
 	//Below this line is all the stuff about opcodes and registers, adding the lines to a vector
 	for(int i = 0; i < state.numMemory; i++){
 		binary_nums.push_back(decToBin(state.mem[i]));
+		//std::cout << binary_nums[i] << std::endl;
 	}
 	for(int i = 0; i < NUMREGS; i++){
 		state.reg[i] = 0;
 	}
 	int reg1 = 0, reg2 = 0, rdest = 0, offset = 0;
 	std::string currOpCode = "";
-	for(int i = 0; i < binary_nums.size(); i++){
-		currOpCode = checkOpCode(binary_nums[i]);
+	int i = 0;
+	for(int i = 0; i < state.numMemory; i++){
 		label:
-		std::cout << "Current Opcode: " << currOpCode << std::endl;
+		currOpCode = checkOpCode(binary_nums[i]);
+		//std::cout << "Current Opcode: " << currOpCode << std::endl;
 		printState(&state);
 		if(currOpCode == "NOOP")continue;
 		else if(currOpCode == "ADD" || currOpCode == "NAND" ){
@@ -98,12 +100,15 @@ main(int argc, char *argv[])
 			}
 		}
 		else if(currOpCode == "LW" || currOpCode == "SW" || currOpCode == "BEQ"){
-			offset = checkReg(binary_nums[i].substr(31-15,16));
+			offset = twosComplement(binary_nums[i].substr(31-15,16));
 			reg1 = checkReg(binary_nums[i].substr(31-21,3));
 			reg2 = checkReg(binary_nums[i].substr(31-18,3));
 			if(currOpCode == "BEQ"){
 				if(state.reg[reg1] == state.reg[reg2]){
-					currOpCode = checkOpCode(decToBin(state.mem[state.pc + 1 + offset]));
+					i = state.pc + 1 + offset;
+					std::cout << "offset == " << offset << std::endl;
+					state.pc = i;
+					std::cout << "I == "<<  i << std::endl;
 					goto label;
 				}
 			}
@@ -117,7 +122,6 @@ main(int argc, char *argv[])
 			
 		}
 		else if(currOpCode == "HALT")break;
-		
 		
 		state.pc++;
 
