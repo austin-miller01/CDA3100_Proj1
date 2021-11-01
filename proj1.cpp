@@ -87,7 +87,10 @@ main(int argc, char *argv[])
 		currOpCode = checkOpCode(binary_nums[i]);
 		//std::cout << "Current Opcode: " << currOpCode << std::endl;
 		printState(&state);
-		if(currOpCode == "NOOP")continue;
+		if(currOpCode == "NOOP"){
+			state.pc++;
+			continue;
+		}
 		else if(currOpCode == "ADD" || currOpCode == "NAND" ){
 			reg1 = checkReg(binary_nums[i].substr(31-21,3));
 			reg2 = checkReg(binary_nums[i].substr(31-18,3));
@@ -98,6 +101,7 @@ main(int argc, char *argv[])
 			else if(currOpCode == "NAND"){
 				state.reg[rdest] = ~(state.reg[reg1] & state.reg[reg2]);
 			}
+			state.pc++;
 		}
 		else if(currOpCode == "LW" || currOpCode == "SW" || currOpCode == "BEQ"){
 			offset = twosComplement(binary_nums[i].substr(31-15,16));
@@ -106,24 +110,26 @@ main(int argc, char *argv[])
 			if(currOpCode == "BEQ"){
 				if(state.reg[reg1] == state.reg[reg2]){
 					i = state.pc + 1 + offset;
-					std::cout << "offset == " << offset << std::endl;
+					//std::cout << "offset == " << offset << std::endl;
 					state.pc = i;
-					std::cout << "I == "<<  i << std::endl;
+					//std::cout << "I == "<<  i << std::endl;
 					goto label;
 				}
 			}
 			else if(currOpCode == "SW"){
+
 				state.mem[state.reg[reg1] + offset] = state.reg[reg2];
+				state.pc++;
 			}
 			else if(currOpCode == "LW"){
 				
 				state.reg[reg2] = state.mem[state.reg[reg1] + offset];
+				state.pc++;
 			}
 			
 		}
 		else if(currOpCode == "HALT")break;
 		
-		state.pc++;
 
 	}
 	

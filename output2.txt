@@ -133,8 +133,6 @@ state:
 		reg[ 6 ] 0
 		reg[ 7 ] 0
 end state
-offset == -3
-I == 2
 
 @@@
 state:
@@ -210,8 +208,6 @@ state:
 		reg[ 6 ] 0
 		reg[ 7 ] 0
 end state
-offset == -3
-I == 2
 
 @@@
 state:
@@ -287,8 +283,6 @@ state:
 		reg[ 6 ] 0
 		reg[ 7 ] 0
 end state
-offset == -3
-I == 2
 
 @@@
 state:
@@ -364,8 +358,6 @@ state:
 		reg[ 6 ] 0
 		reg[ 7 ] 0
 end state
-offset == -3
-I == 2
 
 @@@
 state:
@@ -416,8 +408,6 @@ state:
 		reg[ 6 ] 0
 		reg[ 7 ] 0
 end state
-offset == 2
-I == 6
 
 @@@
 state:
