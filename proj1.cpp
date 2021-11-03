@@ -82,13 +82,15 @@ main(int argc, char *argv[])
 	int reg1 = 0, reg2 = 0, rdest = 0, offset = 0;
 	std::string currOpCode = "";
 	int i = 0;
+	int count  = 0;
 	for(int i = 0; i < state.numMemory; i++){
 		label:
+		count++;
 		currOpCode = checkOpCode(binary_nums[i]);
 		//std::cout << "Current Opcode: " << currOpCode << std::endl;
 		printState(&state);
 		if(currOpCode == "NOOP"){
-			state.pc++;
+			//state.pc++;
 			continue;
 		}
 		else if(currOpCode == "ADD" || currOpCode == "NAND" ){
@@ -101,7 +103,7 @@ main(int argc, char *argv[])
 			else if(currOpCode == "NAND"){
 				state.reg[rdest] = ~(state.reg[reg1] & state.reg[reg2]);
 			}
-			state.pc++;
+			//state.pc++;
 		}
 		else if(currOpCode == "LW" || currOpCode == "SW" || currOpCode == "BEQ"){
 			offset = twosComplement(binary_nums[i].substr(31-15,16));
@@ -109,6 +111,7 @@ main(int argc, char *argv[])
 			reg2 = checkReg(binary_nums[i].substr(31-18,3));
 			if(currOpCode == "BEQ"){
 				if(state.reg[reg1] == state.reg[reg2]){
+					//currOpCode = checkOpCode(decToBin(state.mem[state.pc + 1 + offset]));
 					i = state.pc + 1 + offset;
 					//std::cout << "offset == " << offset << std::endl;
 					state.pc = i;
@@ -119,17 +122,26 @@ main(int argc, char *argv[])
 			else if(currOpCode == "SW"){
 
 				state.mem[state.reg[reg1] + offset] = state.reg[reg2];
-				state.pc++;
+				//state.pc++;
 			}
 			else if(currOpCode == "LW"){
 				
 				state.reg[reg2] = state.mem[state.reg[reg1] + offset];
-				state.pc++;
+				//state.pc++;
 			}
 			
 		}
-		else if(currOpCode == "HALT")break;
-		
+		else if(currOpCode == "HALT"){
+
+			std::cout << "Machine Halted" << std::endl;
+			std::cout << "Total of: " << count << " instructions executed" << std::endl;
+			std::cout << "Final State of the Machine: " <<std::endl;
+			state.pc += 1;
+			printState(&state);
+			break;
+
+		}
+		state.pc++;
 
 	}
 	
